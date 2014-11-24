@@ -33,17 +33,19 @@ class ReadThread(threading.Thread):
             text = tn.read_eager()
             text_buffer += text
             if '\n' in text or '\r' in text:
-                self.print_line(text_buffer)
-                text_buffer = ''
+                text_buffer = self.print_line(text_buffer)
 
     def print_line(self, text):
-        if not text:
-            return
-
+        if not text or not text.strip():
+            return text
+        ret_str = ''
         lines = text.split('\n')
+        if text[-1] != '\n':
+            ret_str = lines.pop()
         for line in lines:
             self.set_colour(line)
-            self.print_katcp(line)
+            self.print_katcp(line + '\n')
+        return ret_str
 
     def stop(self):
         self.keep_reading = False
@@ -58,13 +60,15 @@ class ReadThread(threading.Thread):
     def print_katcp(self, text):
         if not self.raw:
             text = text.replace('\\n', '\n')
+            text = text.replace('\\_', ' ')
+            text = text.replace('\\@', '\@')
             text = text.replace('\_', ' ')
             text = text.replace(r'\\n', '\n')
         if self.prefix_colour is False:
             colour = ''
         else:
             colour = self.prefix_colour
-        print('\r{0}{1}'.format(colour, text))
+        print('\r{0}{1}'.format(colour, text), end='')
 
     def toggle_raw(self):
         self.raw = not self.raw
@@ -77,8 +81,8 @@ class ReadThread(threading.Thread):
 
 
 def print_help():
-    print('Help:')
-    print('-----')
+    print('Help')
+    print('----')
     print('\t \? or \help : Display this.')
     print('\t \quit or \exit : Close the connection.')
     print('\t \\raw : Toggle Raw mode do not escape KatCP special characters.')
@@ -129,4 +133,3 @@ if __name__ == '__main__':
     reader.stop()
     reader.join()
     tn.close()
-#
